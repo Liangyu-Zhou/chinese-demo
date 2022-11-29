@@ -2,22 +2,14 @@ package internal
 
 import (
 	"context"
-	"crypto/ecdsa"
-	"errors"
 	"fmt"
-	"math/big"
 	"net"
 	"os"
 	"os/signal"
 	"runtime"
-	"strings"
 	"syscall"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/prestonvanloon/go-recaptcha"
-	faucetpb "github.com/rauljordan/eth-faucet/proto/faucet"
+	faucetpb "github.com/Liangyu-Zhou/registry-demo/proto/faucet"
 	gateway "github.com/rauljordan/minimal-grpc-gateway"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -30,61 +22,23 @@ var (
 
 // Config for the faucet server.
 type Config struct {
-	GrpcPort          int      `mapstructure:"grpc-port"`
-	GrpcHost          string   `mapstructure:"grpc-host"`
-	HttpPort          int      `mapstructure:"http-port"`
-	HttpHost          string   `mapstructure:"http-host"`
-	AllowedOrigins    []string `mapstructure:"allowed-origins"`
-	CaptchaHost       string   `mapstructure:"captcha-host"`
-	CaptchaSecret     string   `mapstructure:"captcha-secret"`
-	CaptchaMinScore   float64  `mapstructure:"captcha-min-score"`
-	Web3Provider      string   `mapstructure:"web3-provider"`
-	PrivateKey        string   `mapstructure:"private-key"`
-	FundingAmount     string   `mapstructure:"funding-amount"`
-	GasLimit          uint64   `mapstructure:"gas-limit"`
-	IpLimitPerAddress int      `mapstructure:"ip-limit-per-address"`
-	ChainId           int64    `mapstructure:"chain-id"`
+	GrpcPort       int      `mapstructure:"grpc-port"`
+	GrpcHost       string   `mapstructure:"grpc-host"`
+	HttpPort       int      `mapstructure:"http-port"`
+	HttpHost       string   `mapstructure:"http-host"`
+	AllowedOrigins []string `mapstructure:"allowed-origins"`
 }
 
 // Server capable of funding requests for faucet ETH via gRPC and REST HTTP.
 type Server struct {
 	faucetpb.UnimplementedFaucetServer
-	cfg           *Config
-	captcha       recaptcha.Recaptcha
-	client        *ethclient.Client
-	funder        common.Address
-	pk            *ecdsa.PrivateKey
-	fundingAmount *big.Int
-	rateLimiter   rateLimiter
+	cfg *Config
 }
 
 // NewServer initializes the server from configuration values.
 func NewServer(cfg *Config) (*Server, error) {
-	privKeyHex := cfg.PrivateKey
-	if strings.HasPrefix(privKeyHex, "0x") {
-		privKeyHex = privKeyHex[2:]
-	}
-	pk, err := crypto.HexToECDSA(privKeyHex)
-	if err != nil {
-		return nil, fmt.Errorf("could not parse funder private key: %v", err)
-	}
-	fundingAmount, ok := new(big.Int).SetString(cfg.FundingAmount, 10)
-	if !ok {
-		return nil, errors.New("could not set funding amount")
-	}
-	client, err := ethclient.DialContext(context.Background(), cfg.Web3Provider)
-	if err != nil {
-		return nil, fmt.Errorf("could not dial %s: %w", cfg.Web3Provider, err)
-	}
-	funder := crypto.PubkeyToAddress(pk.PublicKey)
 	return &Server{
-		cfg:           cfg,
-		client:        client,
-		funder:        funder,
-		captcha:       recaptcha.Recaptcha{RecaptchaPrivateKey: cfg.CaptchaSecret},
-		pk:            pk,
-		fundingAmount: fundingAmount,
-		rateLimiter:   newSimpleRateLimiter(cfg.IpLimitPerAddress),
+		cfg: cfg,
 	}, nil
 }
 
@@ -93,13 +47,6 @@ func (s *Server) Start() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	runtime.GOMAXPROCS(runtime.NumCPU())
-
-	log.WithFields(logrus.Fields{
-		"chainID": s.cfg.ChainId,
-	}).Info("Initializing faucet server")
-
-	// Query the funds left in the funder's account.
-	s.queryFundsLeft(ctx)
 
 	// Initialize and register gRPC handlers.
 	grpcServer := s.initializeGRPCServer()
@@ -116,9 +63,6 @@ func (s *Server) Start() {
 			log.WithError(err).Fatal("Stopped server")
 		}
 	}()
-
-	// Check IP addresses and reset their max request count over time.
-	go s.rateLimiter.refreshLimits(ctx)
 
 	// Start a gRPC Gateway to serve http JSON requests.
 	gatewayAddress := fmt.Sprintf("%s:%d", s.cfg.HttpHost, s.cfg.HttpPort)
@@ -145,19 +89,6 @@ func (s *Server) Start() {
 
 	// Wait for stop channel to be closed.
 	<-stop
-}
-
-// Query the funds left in the faucet account and log them to the uer.
-func (s *Server) queryFundsLeft(ctx context.Context) {
-	bal, err := s.client.BalanceAt(ctx, s.funder, nil)
-	if err != nil {
-		log.WithError(err).Fatalf("Could not retrieve funder's current balance")
-	}
-
-	log.WithFields(logrus.Fields{
-		"fundsInWei": bal,
-		"publicKey":  s.funder.Hex(),
-	}).Info("Funder account details")
 }
 
 // Initialize a gRPC server and register handlers.

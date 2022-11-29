@@ -1,0 +1,21 @@
+syntax = "proto3";
+package login;
+
+import "google/api/annotations.proto";
+
+service Login {
+    rpc WalletLogin(WalletLoginRequest) returns (WalletLoginResponse) {
+        option (google.api.http) = {
+            post: "/api/v1/login/wallet",
+            body: "*"
+        };
+    }
+}
+
+message WalletLoginRequest {
+    string wallet_address = 1;
+}
+
+message WalletLoginResponse {
+    string db_idx = 1;
+}

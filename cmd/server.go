@@ -4,7 +4,7 @@ import (
 	"os"
 	"runtime"
 
-	"github.com/rauljordan/eth-faucet/internal"
+	"github.com/Liangyu-Zhou/registry-demo/internal"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -27,18 +27,7 @@ var (
 			if err := viper.Unmarshal(&cfg); err != nil {
 				log.Fatal(err)
 			}
-			if cfg.CaptchaHost == "" {
-				log.Fatal("--captcha-host required")
-			}
-			if cfg.CaptchaSecret == "" {
-				log.Fatal("--captcha-secret required")
-			}
-			if cfg.Web3Provider == "" {
-				log.Fatal("--web3-provider endpoint required")
-			}
-			if cfg.PrivateKey == "" {
-				log.Fatal("--private-key hex string required")
-			}
+
 			srv, err := internal.NewServer(cfg)
 			if err != nil {
 				log.WithError(err).Fatal("Could not initialize faucet server")
@@ -58,15 +47,6 @@ func init() {
 	rootCmd.Flags().Int("http-port", 8000, "Port to serve REST http requests")
 	rootCmd.Flags().String("http-host", "127.0.0.1", "Host to serve REST http requests")
 	rootCmd.Flags().StringSlice("allowed-origins", []string{"*"}, "Allowed origins for REST http requests, comma-separated")
-	rootCmd.Flags().String("captcha-host", "", "Host for the captcha validation")
-	rootCmd.Flags().String("captcha-secret", "", "Secret for captcha validation")
-	rootCmd.Flags().Float64("captcha-min-score", 0.9, "Minimum passing captcha score")
-	rootCmd.Flags().String("web3-provider", "http://localhost:8545", "HTTP web3provider endpoint to an Ethereum node")
-	rootCmd.Flags().String("private-key", "", "Private key hex string of the funder of the faucet")
-	rootCmd.Flags().String("funding-amount", "32500000000000000000", "Amount in wei to fund with each request")
-	rootCmd.Flags().Uint64("gas-limit", 40000, "Gas limit for funding transactions")
-	rootCmd.Flags().Int64("chain-id", 5, "Chain ID for Ethereum (5 is the Goerli test network)")
-	rootCmd.Flags().Int("ip-limit-per-address", 5, "Number of ip's allowed per funding address")
 
 	// Bind all flags to a viper configuration.
 	if err := viper.BindPFlags(rootCmd.Flags()); err != nil {

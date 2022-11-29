@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/rauljordan/eth-faucet/cmd"
+	"github.com/Liangyu-Zhou/registry-demo/cmd"
 )
 
 func main() {
