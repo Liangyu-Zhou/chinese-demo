@@ -1,5 +1,6 @@
 syntax = "proto3";
 package faucet;
+option go_package ="faucet/faucet.proto";
 
 import "google/api/annotations.proto";
 
