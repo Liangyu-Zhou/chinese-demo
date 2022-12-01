@@ -17,23 +17,26 @@ const useStyles = makeStyles((theme) => ({
     },
     icon: {
         marginLeft: theme.spacing(1),
+    },
+    frontColor:{
+       
     }
 }));
 
 const Header = () => {
     const classes = useStyles();
     return (
-        <AppBar position="sticky">
+        <AppBar position="sticky" >
             <Toolbar>
                 <IconButton edge="start" className={classes.menuButton} color="inherit" aria-label="menu">
                     <MenuIcon />
                 </IconButton>
                 <Typography variant="h6" className={classes.title}>
-                    ETH Testnet Faucet
+                    Chinese.org Airdrop
                 </Typography>
-                <Button color="inherit" href="https://github.com/rauljordan/eth-faucet">
+                <Button color="inherit" href="https://github.com/Liangyu-Zhou/registry-demo">
                     View on Github
-                    <GitHub className={classes.icon}/>
+                    <GitHub className={classes.icon} />
                 </Button>
             </Toolbar>
         </AppBar>

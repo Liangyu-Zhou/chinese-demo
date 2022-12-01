@@ -1,12 +1,13 @@
 import React from 'react';
 import Header from './Header';
-import FaucetForm from './FaucetForm';
-
+import Metamask from './Metamask';
+import Timeline from "./Timeline"
 const App = () => {
     return (
-        <>
+        <> 
             <Header></Header>
-            <FaucetForm></FaucetForm>
+            <Metamask></Metamask>
+            <Timeline></Timeline>
         </>
     );
 }

@@ -9,8 +9,13 @@ import reportWebVitals from './reportWebVitals';
 
 const theme = createMuiTheme({
     palette: {
-        primary: orange,
-        secondary: pink,
+        primary: {
+            main:"#F26C4F",
+            contrastText:"#ffffff"
+        },      
+        secondary: {
+            main: "#222222"
+        },
         type: 'dark',
     },
 });
